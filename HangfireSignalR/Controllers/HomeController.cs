@@ -39,11 +39,13 @@ namespace HangfireSignalR.Controllers
         public IActionResult BackgroundCounter()
         {
             var userName = User.Identity.Name;
+            //Check for specific Job type
+            //Register Job type (if empty), if there is job of certain type running then send notification to user 
+            //Start Job
             var jobId = BackgroundJob.Enqueue(() => BackgroundCounterAsync(userName));
-            //Register Transfer account job type in cache/db, and clear once above job is finished.
             //BackgroundJob.ContinueWith(
             //                jobId,
-            //                () => Console.WriteLine("Continuation!"));
+            //                () => Console.WriteLine("Clearing certain Type of Job!"));
             return RedirectToAction("Progress");
         }
 
