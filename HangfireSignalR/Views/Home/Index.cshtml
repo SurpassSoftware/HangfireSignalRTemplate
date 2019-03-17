@@ -2,7 +2,16 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@if (User.Identity.IsAuthenticated)
+{
+    <div class="row">
+        <div class="col-md-12">
+            <h2>Start background process</h2>
+            <p>Start a long running process by clicking on the button below:</p>
+            <form asp-action="BackgroundCounter">
+                <button class="btn btn-primary btn-lg">Queue Background Job</button>
+            </form>
+        </div>
+    </div>
+}
+
