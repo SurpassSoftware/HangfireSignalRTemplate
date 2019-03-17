@@ -6,6 +6,7 @@ using Hangfire;
 using Microsoft.AspNetCore.SignalR;
 using HangfireSignalR.Hubs;
 using Microsoft.AspNetCore.Authorization;
+using System;
 
 namespace HangfireSignalR.Controllers
 {
@@ -37,18 +38,31 @@ namespace HangfireSignalR.Controllers
         [Authorize]
         public IActionResult BackgroundCounter()
         {
-            BackgroundJob.Enqueue(() => BackgroundCounterAsync());
+            var userName = User.Identity.Name;
+            var jobId = BackgroundJob.Enqueue(() => BackgroundCounterAsync(userName));
+            //Register Transfer account job type in cache/db, and clear once above job is finished.
+            //BackgroundJob.ContinueWith(
+            //                jobId,
+            //                () => Console.WriteLine("Continuation!"));
             return RedirectToAction("Progress");
         }
 
         [NonAction]
-        public async Task BackgroundCounterAsync()
+        [AutomaticRetry(Attempts = 0)]
+        public async Task BackgroundCounterAsync(string user)
         {
-            for (int i = 0; i <= 100; i += 5)
+            try
             {
-                await _hubContext.Clients.All.SendAsync("progress", i);
-
-                await Task.Delay(500);
+                for (int i = 0; i <= 100; i += 5)
+                {
+                    await _hubContext.Clients.Group(user).SendAsync("progress", i);
+                    await Task.Delay(500);
+                }
+            }
+            catch (Exception)
+            {
+                //Rollback changes
+                throw;
             }
         }
 
