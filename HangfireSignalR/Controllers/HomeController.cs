@@ -13,10 +13,12 @@ namespace HangfireSignalR.Controllers
     public class HomeController : Controller
     {
         private readonly IHubContext<JobProgressHub> _hubContext;
+        private readonly IBackgroundJobClient _backgroundJobClient;
 
-        public HomeController(IHubContext<JobProgressHub> hubContext)
+        public HomeController(IHubContext<JobProgressHub> hubContext, IBackgroundJobClient backgroundJobClient)
         {
             _hubContext = hubContext;
+            _backgroundJobClient = backgroundJobClient;
         }
 
         public IActionResult Index()
@@ -39,13 +41,7 @@ namespace HangfireSignalR.Controllers
         public IActionResult BackgroundCounter()
         {
             var userName = User.Identity.Name;
-            //Check for specific Job type
-            //Register Job type (if empty), if there is job of certain type running then send notification to user 
-            //Start Job
-            var jobId = BackgroundJob.Enqueue(() => BackgroundCounterAsync(userName));
-            //BackgroundJob.ContinueWith(
-            //                jobId,
-            //                () => Console.WriteLine("Clearing certain Type of Job!"));
+            var jobId = _backgroundJobClient.Enqueue(() => BackgroundCounterAsync(userName));
             return RedirectToAction("Progress");
         }
 
@@ -67,8 +63,6 @@ namespace HangfireSignalR.Controllers
                 throw;
             }
         }
-
-
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
