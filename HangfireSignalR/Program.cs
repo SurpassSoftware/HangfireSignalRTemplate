@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using HangfireSignalR.Data;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HangfireSignalR
 {
@@ -14,11 +10,28 @@ namespace HangfireSignalR
     {
         public static void Main(string[] args)
         {
-            CreateWebHostBuilder(args).Build().Run();
+            var host = CreateWebHostBuilder(args).Build();
+
+            //Apply migration
+            var serviceScope = (IServiceScopeFactory)host.Services.GetService(typeof(IServiceScopeFactory));
+            ApplyMigration(serviceScope);
+
+            host.Run();
         }
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>();
+
+        private static void ApplyMigration(IServiceScopeFactory serviceScope)
+        {
+            using (var scope = serviceScope.CreateScope())
+            {
+                using (var baseDbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>())
+                {
+                    baseDbContext.Database.Migrate();
+                }
+            }
+        }
     }
 }

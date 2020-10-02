@@ -14,11 +14,15 @@ namespace HangfireSignalR.Controllers
     {
         private readonly IHubContext<JobProgressHub> _hubContext;
         private readonly IBackgroundJobClient _backgroundJobClient;
+        private readonly IHubContext<BroadcastHub> _broadcastHubContext;
 
-        public HomeController(IHubContext<JobProgressHub> hubContext, IBackgroundJobClient backgroundJobClient)
+        public HomeController(IHubContext<JobProgressHub> hubContext,
+            IBackgroundJobClient backgroundJobClient,
+            IHubContext<BroadcastHub> broadcastHubContext)
         {
             _hubContext = hubContext;
             _backgroundJobClient = backgroundJobClient;
+            _broadcastHubContext = broadcastHubContext;
         }
 
         public IActionResult Index()
@@ -43,6 +47,12 @@ namespace HangfireSignalR.Controllers
             var userName = User.Identity.Name;
             var jobId = _backgroundJobClient.Enqueue(() => BackgroundCounterAsync(userName));
             return RedirectToAction("Progress");
+        }
+
+        public IActionResult BroadcastMessage()
+        {
+            _broadcastHubContext.Clients.All.SendAsync("broadcastchannel", "This is message for all customers...");
+            return View("Index");
         }
 
         [NonAction]
